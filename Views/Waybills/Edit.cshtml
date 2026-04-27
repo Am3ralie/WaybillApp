@@ -1,0 +1,201 @@
+@model WaybillApp.Models.Waybill
+@using WaybillApp.Models
+@{
+    bool isEdit = Model.Id > 0;
+    ViewData["Title"] = isEdit ? "Редактировать путевой лист" : "Новый путевой лист";
+    var norm = (FuelNorm)ViewBag.Norm;
+    var drivers = (IEnumerable<Driver>)ViewBag.Drivers;
+    var vehicles = (IEnumerable<Vehicle>)ViewBag.Vehicles;
+}
+
+<form method="post" asp-action="@(isEdit ? "Edit" : "Create")">
+  @Html.AntiForgeryToken()
+  @if (isEdit) { <input type="hidden" asp-for="Id"/> }
+
+  <!-- Блок 1: Основное -->
+  <div class="card" style="margin-bottom:16px">
+    <h3 style="font-size:14px;font-weight:600;margin-bottom:16px">Основные данные</h3>
+    <div class="form-grid">
+      <div class="form-group">
+        <label>Номер листа</label>
+        <input asp-for="Number" placeholder="Например: ПЛ-2024-001"/>
+      </div>
+      <div class="form-group">
+        <label>Дата</label>
+        <input asp-for="Date" type="date"/>
+      </div>
+      <div class="form-group">
+        <label>Водитель</label>
+        <select asp-for="DriverId">
+          <option value="">— выберите —</option>
+          @foreach (var d in drivers)
+          { <option value="@d.Id" selected="@(Model.DriverId == d.Id)">@d.FullName @(d.TabNumber != null ? $"(таб. {d.TabNumber})" : "")</option> }
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Транспортное средство</label>
+        <select asp-for="VehicleId">
+          <option value="">— выберите —</option>
+          @foreach (var v in vehicles)
+          { <option value="@v.Id" selected="@(Model.VehicleId == v.Id)">@v.PlateNumber @v.Model</option> }
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Маршрут</label>
+        <input asp-for="Route" placeholder="Откуда — Куда"/>
+      </div>
+      <div class="form-group">
+        <label>Статус</label>
+        <select asp-for="Status">
+          <option value="open">Открыт</option>
+          <option value="closed">Закрыт</option>
+          <option value="printed">Распечатан</option>
+        </select>
+      </div>
+    </div>
+  </div>
+
+  <!-- Блок 2: Время и пробег -->
+  <div class="card" style="margin-bottom:16px">
+    <h3 style="font-size:14px;font-weight:600;margin-bottom:16px">Время и пробег</h3>
+    <div class="form-grid">
+      <div class="form-group">
+        <label>Время выезда</label>
+        <input asp-for="DepartureTime" type="time"/>
+      </div>
+      <div class="form-group">
+        <label>Время возвращения</label>
+        <input asp-for="ArrivalTime" type="time"/>
+      </div>
+      <div class="form-group">
+        <label>Спидометр при выезде (км)</label>
+        <input asp-for="OdometerStart" type="number" id="odo-start" oninput="calcMileage()"/>
+      </div>
+      <div class="form-group">
+        <label>Спидометр при возвращении (км)</label>
+        <input asp-for="OdometerEnd" type="number" id="odo-end" oninput="calcMileage()"/>
+      </div>
+    </div>
+    <div style="margin-top:12px;padding:10px 14px;background:#f0f9ff;border:1px solid #bae6fd;border-radius:8px;font-size:13px">
+      Суточный пробег: <strong id="mileage-display">@(Model.DailyMileage?.ToString("N0") ?? "—")</strong> км
+      &nbsp;|&nbsp; Время в наряде: <strong id="time-display">@(Model.TimeInDuty?.ToString("F2") ?? "—")</strong> ч
+    </div>
+  </div>
+
+  <!-- Блок 3: Топливо -->
+  <div class="card" style="margin-bottom:16px">
+    <h3 style="font-size:14px;font-weight:600;margin-bottom:16px">Движение топлива</h3>
+    <div class="form-grid">
+      <div class="form-group">
+        <label>Остаток при выезде (л)</label>
+        <input asp-for="FuelAtDeparture" type="number" step="0.01" id="fuel-dep" oninput="calcFuel()"/>
+      </div>
+      <div class="form-group">
+        <label>Заправлено (л)</label>
+        <input asp-for="FuelAdded" type="number" step="0.01" id="fuel-add" oninput="calcFuel()"/>
+      </div>
+      <div class="form-group">
+        <label>Остаток при возвращении (л)</label>
+        <input asp-for="FuelAtArrival" type="number" step="0.01" id="fuel-ret" oninput="calcFuel()"/>
+      </div>
+      <div class="form-group">
+        <label>Марка топлива</label>
+        <select asp-for="FuelType">
+          <option value="">—</option>
+          <option value="ДТ">ДТ (дизель)</option>
+          <option value="АИ-92">АИ-92</option>
+          <option value="АИ-95">АИ-95</option>
+          <option value="ГАЗ">ГАЗ</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- Условия для расчёта нормы -->
+    <div style="display:flex;gap:20px;margin-top:14px;flex-wrap:wrap">
+      <div class="form-check">
+        <input asp-for="IsOutOfCity" type="checkbox" id="out-of-city" onchange="calcFuel()"/>
+        <label for="out-of-city">Вне города</label>
+      </div>
+      <div class="form-check">
+        <input asp-for="IsWinter" type="checkbox" id="is-winter" onchange="calcFuel()"/>
+        <label for="is-winter">Зимний период</label>
+      </div>
+      <div class="form-check">
+        <input asp-for="WithCargo" type="checkbox" id="with-cargo" onchange="calcFuel()"/>
+        <label for="with-cargo">С грузом</label>
+      </div>
+    </div>
+
+    <div id="fuel-summary" style="margin-top:14px;padding:12px 16px;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;font-size:13px;display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:8px">
+      <div>Фактический расход: <strong id="fuel-actual">—</strong> л</div>
+      <div>По норме: <strong id="fuel-norm">—</strong> л</div>
+      <div id="fuel-econ-wrap">Экономия/Перерасход: <strong id="fuel-econ">—</strong></div>
+    </div>
+  </div>
+
+  <!-- Примечание -->
+  <div class="card" style="margin-bottom:16px">
+    <div class="form-group">
+      <label>Примечание</label>
+      <textarea asp-for="Notes" rows="2"></textarea>
+    </div>
+  </div>
+
+  <div class="form-actions">
+    <button type="submit" class="btn btn-primary">@(isEdit ? "Сохранить" : "Создать")</button>
+    <a class="btn btn-secondary" asp-action="Index">Отмена</a>
+  </div>
+</form>
+
+@section Scripts {
+<script>
+// Коэффициенты из текущей нормы (переданы из Razor)
+const BASE = @norm.BaseNorm;
+const K_CARGO = @norm.KCargo.ToString(System.Globalization.CultureInfo.InvariantCulture);
+const K_CITY  = @norm.KCity.ToString(System.Globalization.CultureInfo.InvariantCulture);
+const K_WINTER = @norm.KWinter.ToString(System.Globalization.CultureInfo.InvariantCulture);
+
+function calcMileage() {
+  const start = +document.getElementById('odo-start').value;
+  const end   = +document.getElementById('odo-end').value;
+  const miles = (start && end && end > start) ? (end - start) : null;
+  document.getElementById('mileage-display').textContent = miles ? miles.toLocaleString('ru') : '—';
+  calcFuel();
+}
+
+function calcFuel() {
+  const dep = parseFloat(document.getElementById('fuel-dep').value) || 0;
+  const add = parseFloat(document.getElementById('fuel-add').value) || 0;
+  const ret = parseFloat(document.getElementById('fuel-ret').value) || 0;
+  const actual = dep + add - ret;
+  document.getElementById('fuel-actual').textContent =
+    (dep || add || ret) ? actual.toFixed(2) : '—';
+
+  const start  = +document.getElementById('odo-start').value;
+  const end    = +document.getElementById('odo-end').value;
+  const miles  = (start && end && end > start) ? end - start : 0;
+
+  const outCity = document.getElementById('out-of-city').checked;
+  const winter  = document.getElementById('is-winter').checked;
+  const cargo   = document.getElementById('with-cargo').checked;
+
+  let rate = BASE;
+  if (cargo)   rate *= (1 + K_CARGO);
+  if (!outCity) rate *= (1 + K_CITY);
+  if (winter)  rate *= (1 + K_WINTER);
+
+  const byNorm = miles ? (miles * rate / 100) : 0;
+  document.getElementById('fuel-norm').textContent = miles ? byNorm.toFixed(2) : '—';
+
+  if (miles && (dep || add || ret)) {
+    const econ = byNorm - actual;
+    const el = document.getElementById('fuel-econ');
+    el.textContent = (econ >= 0 ? '+' : '') + econ.toFixed(2) + ' л';
+    el.style.color = econ >= 0 ? '#16a34a' : '#dc2626';
+  }
+}
+
+// Запустить при загрузке страницы
+calcMileage();
+</script>
+}

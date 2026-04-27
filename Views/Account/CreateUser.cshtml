@@ -1,0 +1,23 @@
+@{ ViewData["Title"] = "Создать пользователя"; }
+<div class="card" style="max-width:480px">
+  <form method="post" asp-action="CreateUser">
+    @Html.AntiForgeryToken()
+    <div class="form-grid">
+      <div class="form-group"><label>Логин</label><input name="username" required placeholder="ivanov"/></div>
+      <div class="form-group"><label>ФИО</label><input name="fullName" required placeholder="Иванов И.И."/></div>
+      <div class="form-group"><label>Пароль</label><input name="password" type="password" required placeholder="минимум 4 символа"/></div>
+      <div class="form-group">
+        <label>Роль</label>
+        <select name="role">
+          <option value="operator">Оператор</option>
+          <option value="driver">Водитель</option>
+          <option value="admin">Администратор</option>
+        </select>
+      </div>
+    </div>
+    <div class="form-actions">
+      <button type="submit" class="btn btn-primary">Создать</button>
+      <a class="btn btn-secondary" asp-action="Users">Отмена</a>
+    </div>
+  </form>
+</div>

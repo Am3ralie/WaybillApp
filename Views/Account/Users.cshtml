@@ -1,0 +1,28 @@
+@model IEnumerable<WaybillApp.Models.ApplicationUser>
+@{ ViewData["Title"] = "Управление пользователями"; }
+<div class="toolbar">
+  <div class="toolbar-right">
+    <a class="btn btn-primary" asp-action="CreateUser">+ Добавить пользователя</a>
+  </div>
+</div>
+<div class="table-wrap">
+  <table>
+    <thead><tr><th>Логин</th><th>ФИО</th><th>Email</th><th>Роль</th><th>Действия</th></tr></thead>
+    <tbody>
+    @foreach (var u in Model)
+    {
+      <tr>
+        <td><strong>@u.UserName</strong></td><td>@u.FullName</td><td>@u.Email</td>
+        <td><span class="badge @(u.Role=="admin"?"badge-blue":u.Role=="operator"?"badge-green":"badge-gray")">@u.Role</span></td>
+        <td>
+          <a class="btn btn-secondary btn-sm" asp-action="EditUser" asp-route-id="@u.Id">Изменить</a>
+          @if (u.UserName != User.Identity!.Name) {
+            <form method="post" asp-action="DeleteUser" asp-route-id="@u.Id" style="display:inline" onsubmit="return confirm('Удалить пользователя @u.UserName?')">
+              @Html.AntiForgeryToken()<button type="submit" class="btn btn-danger btn-sm">Удалить</button>
+            </form> }
+        </td>
+      </tr>
+    }
+    </tbody>
+  </table>
+</div>

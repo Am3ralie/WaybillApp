@@ -1,0 +1,28 @@
+@model WaybillApp.Models.ApplicationUser
+@{ ViewData["Title"] = "Редактировать пользователя"; }
+<div class="card" style="max-width:480px">
+  <p style="color:#6b6b66;font-size:13px;margin-bottom:16px">Логин: <strong>@Model.UserName</strong></p>
+  <form method="post" asp-action="EditUser" asp-route-id="@Model.Id">
+    @Html.AntiForgeryToken()
+    <input type="hidden" name="id" value="@Model.Id"/>
+    <div class="form-grid">
+      <div class="form-group"><label>ФИО</label><input name="fullName" value="@Model.FullName" required/></div>
+      <div class="form-group">
+        <label>Роль</label>
+        <select name="role">
+          <option value="operator" selected="@(Model.Role=="operator")">Оператор</option>
+          <option value="driver" selected="@(Model.Role=="driver")">Водитель</option>
+          <option value="admin" selected="@(Model.Role=="admin")">Администратор</option>
+        </select>
+      </div>
+      <div class="form-group" style="grid-column:1/-1">
+        <label>Новый пароль (оставьте пустым чтобы не менять)</label>
+        <input name="newPassword" type="password" placeholder="новый пароль"/>
+      </div>
+    </div>
+    <div class="form-actions">
+      <button type="submit" class="btn btn-primary">Сохранить</button>
+      <a class="btn btn-secondary" asp-action="Users">Отмена</a>
+    </div>
+  </form>
+</div>

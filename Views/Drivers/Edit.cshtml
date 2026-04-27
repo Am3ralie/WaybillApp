@@ -1,0 +1,44 @@
+@model WaybillApp.Models.Driver
+@{
+    bool isEdit = Model.Id > 0;
+    ViewData["Title"] = isEdit ? "Редактировать водителя" : "Новый водитель";
+}
+
+<div class="card" style="max-width:560px">
+  <form method="post" asp-action="@(isEdit ? "Edit" : "Create")">
+    @Html.AntiForgeryToken()
+    @if (isEdit) { <input type="hidden" asp-for="Id"/> }
+
+    <div class="form-grid">
+      <div class="form-group" style="grid-column:1/-1">
+        <label>ФИО</label>
+        <input asp-for="FullName" required placeholder="Иванов Иван Иванович"/>
+      </div>
+      <div class="form-group">
+        <label>Табельный номер</label>
+        <input asp-for="TabNumber" placeholder="001"/>
+      </div>
+      <div class="form-group">
+        <label>Номер удостоверения</label>
+        <input asp-for="LicenseNumber" placeholder="77 ВА 000000"/>
+      </div>
+      <div class="form-group">
+        <label>Срок действия прав</label>
+        <input asp-for="LicenseExpiry" type="date"/>
+      </div>
+      <div class="form-group">
+        <label>Телефон</label>
+        <input asp-for="Phone" type="tel" placeholder="+7 900 000-00-00"/>
+      </div>
+      <div class="form-check" style="grid-column:1/-1;margin-top:4px">
+        <input asp-for="IsActive" type="checkbox" id="is-active"/>
+        <label for="is-active">Активен</label>
+      </div>
+    </div>
+
+    <div class="form-actions">
+      <button type="submit" class="btn btn-primary">@(isEdit ? "Сохранить" : "Создать")</button>
+      <a class="btn btn-secondary" asp-action="Index">Отмена</a>
+    </div>
+  </form>
+</div>

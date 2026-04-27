@@ -1,0 +1,128 @@
+@model WaybillApp.Models.Waybill
+@using WaybillApp.Models
+@{
+    Layout = null;
+}
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8"/>
+<title>Путевой лист @Model.Number — Печать</title>
+<link rel="stylesheet" href="~/css/site.css"/>
+<style>
+body { font-family: 'Times New Roman', serif; font-size: 12pt; padding: 20mm; }
+h2 { text-align: center; font-size: 16pt; }
+.print-table { width: 100%; border-collapse: collapse; margin-top: 12pt; }
+.print-table th, .print-table td { border: 1px solid #000; padding: 4pt 6pt; font-size: 11pt; }
+.print-table th { background: #f0f0f0; text-align: center; }
+.section { margin-top: 14pt; }
+.section-title { font-weight: bold; margin-bottom: 6pt; font-size: 12pt; }
+.sign-row { display: flex; gap: 40pt; margin-top: 20pt; }
+.sign-field { flex: 1; border-bottom: 1px solid #000; min-width: 120pt; }
+.sign-label { font-size: 10pt; margin-top: 4pt; }
+.no-print-btn { position: fixed; top: 10px; right: 10px; }
+@@media print { .no-print-btn { display: none; } }
+</style>
+</head>
+<body>
+
+<div class="no-print-btn">
+  <button onclick="window.print()" style="padding:8px 16px;background:#2563eb;color:#fff;border:none;border-radius:6px;cursor:pointer;font-size:13px">Печать</button>
+  <button onclick="window.close()" style="padding:8px 16px;background:#6b7280;color:#fff;border:none;border-radius:6px;cursor:pointer;font-size:13px;margin-left:6px">Закрыть</button>
+</div>
+
+<h2>ПУТЕВОЙ ЛИСТ № @(Model.Number ?? Model.Id.ToString())</h2>
+<p style="text-align:center;font-size:11pt">от @Model.Date.ToString("dd MMMM yyyy г.", System.Globalization.CultureInfo.GetCultureInfo("ru-RU"))</p>
+
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:10pt;margin-top:12pt">
+  <div><strong>Водитель:</strong> @Model.Driver?.FullName</div>
+  <div><strong>ТС:</strong> @Model.Vehicle?.PlateNumber @Model.Vehicle?.Model</div>
+  <div><strong>Маршрут:</strong> @Model.Route</div>
+  <div><strong>Статус:</strong> @Model.Status</div>
+</div>
+
+<div class="section">
+  <div class="section-title">Время и пробег</div>
+  <table class="print-table">
+    <thead>
+      <tr>
+        <th>Время выезда</th>
+        <th>Время возврата</th>
+        <th>Время в наряде (ч)</th>
+        <th>Спидометр выезд (км)</th>
+        <th>Спидометр возврат (км)</th>
+        <th>Суточный пробег (км)</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td style="text-align:center">@Model.DepartureTime?.ToString("HH:mm")</td>
+        <td style="text-align:center">@Model.ArrivalTime?.ToString("HH:mm")</td>
+        <td style="text-align:center">@Model.TimeInDuty?.ToString("F2")</td>
+        <td style="text-align:center">@Model.OdometerStart?.ToString("N0")</td>
+        <td style="text-align:center">@Model.OdometerEnd?.ToString("N0")</td>
+        <td style="text-align:center"><strong>@Model.DailyMileage?.ToString("N0")</strong></td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+<div class="section">
+  <div class="section-title">Движение топлива</div>
+  <table class="print-table">
+    <thead>
+      <tr>
+        <th>Марка топлива</th>
+        <th>Остаток при выезде (л)</th>
+        <th>Заправлено (л)</th>
+        <th>Остаток при возврате (л)</th>
+        <th>Расход по норме (л)</th>
+        <th>Фактический расход (л)</th>
+        <th>Экономия (+) / Перерасход (-) (л)</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td style="text-align:center">@Model.FuelType</td>
+        <td style="text-align:center">@Model.FuelAtDeparture?.ToString("F2")</td>
+        <td style="text-align:center">@Model.FuelAdded?.ToString("F2")</td>
+        <td style="text-align:center">@Model.FuelAtArrival?.ToString("F2")</td>
+        <td style="text-align:center">@Model.FuelByNorm?.ToString("F2")</td>
+        <td style="text-align:center">@Model.FuelActual?.ToString("F2")</td>
+        <td style="text-align:center">
+          @if (Model.FuelEconomyOrOverrun.HasValue)
+          { @((Model.FuelEconomyOrOverrun >= 0 ? "+" : "") + Model.FuelEconomyOrOverrun?.ToString("F2")) }
+        </td>
+      </tr>
+    </tbody>
+  </table>
+  <div style="margin-top:6pt;font-size:10pt">
+    Условия: @(Model.IsOutOfCity ? "загород" : "город"), @(Model.IsWinter ? "зима" : "лето"), @(Model.WithCargo ? "с грузом" : "без груза")
+  </div>
+</div>
+
+@if (!string.IsNullOrWhiteSpace(Model.Notes))
+{
+  <div class="section">
+    <div class="section-title">Примечание</div>
+    <div>@Model.Notes</div>
+  </div>
+}
+
+<div class="sign-row">
+  <div>
+    <div class="sign-field">&nbsp;</div>
+    <div class="sign-label">Диспетчер / Оператор</div>
+  </div>
+  <div>
+    <div class="sign-field">&nbsp;</div>
+    <div class="sign-label">Водитель (@Model.Driver?.FullName)</div>
+  </div>
+  <div>
+    <div class="sign-field">&nbsp;</div>
+    <div class="sign-label">Механик</div>
+  </div>
+</div>
+
+</body>
+</html>

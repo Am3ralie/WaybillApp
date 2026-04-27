@@ -1,0 +1,155 @@
+@model IEnumerable<WaybillApp.Models.Waybill>
+@using WaybillApp.Models
+@{
+    ViewData["Title"] = "Путевые листы";
+    var norm = (FuelNorm)ViewBag.Norm;
+}
+
+<div class="toolbar no-print">
+  <form method="get" style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+    <input class="search-input" name="search" placeholder="Поиск по номеру, водителю, ТС"
+           value="@ViewBag.Search"/>
+    <select class="search-input" name="month" style="width:auto">
+      <option value="">— Месяц —</option>
+      @for (int m = 1; m <= 12; m++)
+      { <option value="@m" selected="@(ViewBag.Month == m)">@System.Globalization.CultureInfo.GetCultureInfo("ru-RU").DateTimeFormat.GetMonthName(m)</option> }
+    </select>
+    <select class="search-input" name="year" style="width:auto">
+      <option value="">— Год —</option>
+      @for (int y = DateTime.Now.Year; y >= DateTime.Now.Year - 5; y--)
+      { <option value="@y" selected="@(ViewBag.Year == y)">@y</option> }
+    </select>
+    <button type="submit" class="btn btn-secondary">Фильтр</button>
+  </form>
+  <div class="toolbar-right">
+    <a class="btn btn-success" asp-action="ExportExcel" asp-route-month="@ViewBag.Month" asp-route-year="@ViewBag.Year">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+      Экспорт Excel
+    </a>
+    @if (User.IsInRole("admin") || User.IsInRole("operator"))
+    {
+      <a class="btn btn-primary" asp-action="Create">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        Добавить
+      </a>
+    }
+  </div>
+</div>
+
+<div class="table-wrap">
+  <table>
+    <thead>
+      <tr>
+        <th>№</th>
+        <th>Дата</th>
+        <th>Водитель</th>
+        <th>ТС</th>
+        <th>Выезд</th>
+        <th>Возврат</th>
+        <th>Время (ч)</th>
+        <th>Сп. выезд</th>
+        <th>Сп. возврат</th>
+        <th>Пробег (км)</th>
+        <th>Остаток выезд (л)</th>
+        <th>Заправлено (л)</th>
+        <th>Остаток возврат (л)</th>
+        <th>Марка</th>
+        <th>По норме (л)</th>
+        <th>Фактически (л)</th>
+        <th>Экон./Перерасход</th>
+        <th>Действия</th>
+      </tr>
+    </thead>
+    <tbody>
+      @foreach (var w in Model)
+      {
+        <tr>
+          <td>@(w.Number ?? w.Id.ToString())</td>
+          <td>@w.Date.ToString("dd.MM.yyyy")</td>
+          <td>@w.Driver?.FullName</td>
+          <td>@w.Vehicle?.PlateNumber<br/><small style="color:#6b6b66">@w.Vehicle?.Model</small></td>
+          <td>@w.DepartureTime?.ToString("HH:mm")</td>
+          <td>@w.ArrivalTime?.ToString("HH:mm")</td>
+          <td>@w.TimeInDuty?.ToString("F2")</td>
+          <td>@w.OdometerStart?.ToString("N0")</td>
+          <td>@w.OdometerEnd?.ToString("N0")</td>
+          <td><strong>@w.DailyMileage?.ToString("N0")</strong></td>
+          <td>@w.FuelAtDeparture?.ToString("F2")</td>
+          <td>@w.FuelAdded?.ToString("F2")</td>
+          <td>@w.FuelAtArrival?.ToString("F2")</td>
+          <td>@w.FuelType</td>
+          <td>@w.FuelByNorm?.ToString("F2")</td>
+          <td>@w.FuelActual?.ToString("F2")</td>
+          <td>
+            @if (w.FuelEconomyOrOverrun.HasValue)
+            {
+              if (w.FuelEconomyOrOverrun >= 0)
+              { <span class="economy">+@w.FuelEconomyOrOverrun?.ToString("F2")</span> }
+              else
+              { <span class="overrun">@w.FuelEconomyOrOverrun?.ToString("F2")</span> }
+            }
+          </td>
+          <td style="white-space:nowrap">
+            <a class="btn btn-secondary btn-sm" asp-action="Details" asp-route-id="@w.Id">Детали</a>
+            <a class="btn btn-secondary btn-sm" asp-action="Print" asp-route-id="@w.Id" target="_blank">Печать</a>
+            @if (User.IsInRole("admin") || User.IsInRole("operator"))
+            {
+              <a class="btn btn-secondary btn-sm" asp-action="Edit" asp-route-id="@w.Id">Изм.</a>
+            }
+            @if (User.IsInRole("admin"))
+            {
+              <form method="post" asp-action="Delete" asp-route-id="@w.Id" style="display:inline"
+                    onsubmit="return confirm('Удалить лист №@(w.Number ?? w.Id.ToString())?')">
+                @Html.AntiForgeryToken()
+                <button type="submit" class="btn btn-danger btn-sm">Удал.</button>
+              </form>
+            }
+          </td>
+        </tr>
+      }
+      @if (!Model.Any())
+      { <tr><td colspan="18" style="text-align:center;color:#6b6b66;padding:24px">Путевые листы не найдены</td></tr> }
+    </tbody>
+  </table>
+</div>
+
+<!-- Таблица норм внизу страницы -->
+<div style="margin-top:24px">
+  <h3 style="font-size:14px;font-weight:600;margin-bottom:10px;color:#6b6b66">Действующие нормы расхода (л/100 км) — @norm.Name</h3>
+  <div class="table-wrap" style="display:inline-block">
+    <table class="norm-table">
+      <thead>
+        <tr>
+          <th rowspan="2" class="row-header">Условие</th>
+          <th colspan="2">Загород (летнее)</th>
+          <th colspan="2">Загород (зимнее)</th>
+          <th colspan="2">Город (летнее)</th>
+          <th colspan="2">Город (зимнее)</th>
+        </tr>
+        <tr>
+          <th>Без груза</th><th>С грузом</th>
+          <th>Без груза</th><th>С грузом</th>
+          <th>Без груза</th><th>С грузом</th>
+          <th>Без груза</th><th>С грузом</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td class="row-header">Норма</td>
+          <td>@norm.SummerNoCargo.ToString("F2")</td>
+          <td>@norm.SummerWithCargo.ToString("F2")</td>
+          <td>@norm.WinterNoCargo.ToString("F2")</td>
+          <td>@norm.WinterWithCargo.ToString("F2")</td>
+          <td>@norm.SummerNoCargoCity.ToString("F2")</td>
+          <td>@norm.SummerWithCargoCity.ToString("F2")</td>
+          <td>@norm.WinterNoCargoCity.ToString("F2")</td>
+          <td>@norm.WinterWithCargoCity.ToString("F2")</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+  <div style="margin-top:6px;font-size:12px;color:#6b6b66">
+    Базовая: @norm.BaseNorm л/100 км | Коэф. груз: @norm.KCargo | Коэф. город: @norm.KCity | Коэф. зима: @norm.KWinter
+    &nbsp;<a asp-controller="FuelNorms" asp-action="Index" style="color:var(--accent)">Изменить нормы →</a>
+  </div>
+</div>

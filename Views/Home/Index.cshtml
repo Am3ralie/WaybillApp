@@ -1,0 +1,92 @@
+@using WaybillApp.Services
+@{
+    ViewData["Title"] = "Главная";
+    var s = (DashboardStats)ViewBag.Stats;
+}
+
+<div class="stats-grid">
+  <div class="stat-card">
+    <div class="stat-value">@s.TotalWaybills</div>
+    <div class="stat-label">Путевых листов всего</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-value">@s.TodayCount</div>
+    <div class="stat-label">Листов сегодня</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-value">@s.MonthCount</div>
+    <div class="stat-label">Листов за текущий месяц</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-value">@s.ActiveDrivers</div>
+    <div class="stat-label">Активных водителей</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-value">@s.ActiveVehicles</div>
+    <div class="stat-label">Транспортных средств</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-value">@s.MonthMileage.ToString("N0")</div>
+    <div class="stat-label">Пробег за месяц (км)</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-value">@s.MonthFuelActual.ToString("F0")</div>
+    <div class="stat-label">Факт. расход за месяц (л)</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-value" style="color:@(s.MonthFuelDelta >= 0 ? "var(--success)" : "var(--danger)")">
+      @(s.MonthFuelDelta >= 0 ? "+" : "")@s.MonthFuelDelta.ToString("F1")
+    </div>
+    <div class="stat-label">Экономия за месяц (л)</div>
+  </div>
+</div>
+
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:4px">
+  <div class="card">
+    <h3 style="font-size:15px;font-weight:600;margin-bottom:14px">Быстрые действия</h3>
+    <div style="display:flex;flex-direction:column;gap:8px">
+      @if (User.IsInRole("admin") || User.IsInRole("operator"))
+      {
+        <a class="btn btn-primary" asp-controller="Waybills" asp-action="Create">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          Создать путевой лист
+        </a>
+        <a class="btn btn-secondary" asp-controller="FuelNorms" asp-action="Create">Добавить норму расхода</a>
+      }
+      <a class="btn btn-secondary" asp-controller="Waybills" asp-action="Index">Все путевые листы</a>
+      <a class="btn btn-secondary" asp-controller="Drivers" asp-action="Index">Водители</a>
+      <a class="btn btn-secondary" asp-controller="Vehicles" asp-action="Index">Транспорт</a>
+    </div>
+  </div>
+
+  <div class="card">
+    <h3 style="font-size:15px;font-weight:600;margin-bottom:14px">Права доступа</h3>
+    <table style="font-size:13px;width:100%;border-collapse:collapse">
+      <thead>
+        <tr style="border-bottom:1px solid var(--border)">
+          <th style="text-align:left;padding:4px 8px">Роль</th>
+          <th style="padding:4px">Просмотр</th>
+          <th style="padding:4px">Создание/Правка</th>
+          <th style="padding:4px">Удаление</th>
+          <th style="padding:4px">Пользователи</th>
+        </tr>
+      </thead>
+      <tbody>
+        @foreach (var (role, r, c, d, u) in new (string,string,string,string,string)[] {
+          ("Администратор", "✅","✅","✅","✅"),
+          ("Оператор",      "✅","✅","❌","❌"),
+          ("Водитель",      "✅ (свои)","❌","❌","❌"),
+        })
+        {
+          <tr style="border-bottom:1px solid var(--border)">
+            <td style="padding:5px 8px;font-weight:600">@role</td>
+            <td style="text-align:center;padding:5px">@r</td>
+            <td style="text-align:center;padding:5px">@c</td>
+            <td style="text-align:center;padding:5px">@d</td>
+            <td style="text-align:center;padding:5px">@u</td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+</div>

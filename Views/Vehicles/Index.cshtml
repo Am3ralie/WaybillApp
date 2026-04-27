@@ -1,0 +1,35 @@
+@model IEnumerable<WaybillApp.Models.Vehicle>
+@{ ViewData["Title"] = "Транспортные средства"; }
+<div class="toolbar">
+  <div class="toolbar-right">
+    @if (User.IsInRole("admin") || User.IsInRole("operator"))
+    { <a class="btn btn-primary" asp-action="Create">+ Добавить ТС</a> }
+  </div>
+</div>
+<div class="table-wrap">
+  <table>
+    <thead><tr><th>Гос. номер</th><th>Марка/Модель</th><th>VIN</th><th>Техосмотр до</th><th>Статус</th><th>Действия</th></tr></thead>
+    <tbody>
+    @foreach (var v in Model)
+    {
+      <tr>
+        <td><strong>@v.PlateNumber</strong></td><td>@v.Model</td>
+        <td style="font-size:11px;color:#6b6b66">@v.Vin</td>
+        <td>@if (v.TechInspectionExpiry.HasValue) {
+          var exp = v.TechInspectionExpiry.Value < DateOnly.FromDateTime(DateTime.Today);
+          <span class="badge @(exp ? "badge-red" : "badge-green")">@v.TechInspectionExpiry.Value.ToString("dd.MM.yyyy")</span> }
+        </td>
+        <td><span class="badge @(v.IsActive ? "badge-green" : "badge-gray")">@(v.IsActive ? "Активен" : "Неактивен")</span></td>
+        <td>
+          @if (User.IsInRole("admin") || User.IsInRole("operator"))
+          { <a class="btn btn-secondary btn-sm" asp-action="Edit" asp-route-id="@v.Id">Изменить</a> }
+          @if (User.IsInRole("admin")) {
+            <form method="post" asp-action="Delete" asp-route-id="@v.Id" style="display:inline" onsubmit="return confirm('Удалить?')">
+              @Html.AntiForgeryToken()<button type="submit" class="btn btn-danger btn-sm">Удалить</button>
+            </form> }
+        </td>
+      </tr>
+    }
+    </tbody>
+  </table>
+</div>

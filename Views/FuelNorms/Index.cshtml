@@ -1,0 +1,103 @@
+@model IEnumerable<WaybillApp.Models.FuelNorm>
+@{
+    ViewData["Title"] = "Нормы расхода топлива";
+}
+
+<div class="toolbar no-print">
+  <div class="toolbar-right">
+    @if (User.IsInRole("admin") || User.IsInRole("operator"))
+    {
+      <a class="btn btn-primary" asp-action="Create">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        Добавить норму
+      </a>
+    }
+  </div>
+</div>
+
+@foreach (var norm in Model)
+{
+  <div class="card" style="margin-bottom:16px">
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:14px">
+      <div>
+        <h3 style="font-size:15px;font-weight:600">@norm.Name</h3>
+        <div style="font-size:12px;color:#6b6b66">Действует с: @norm.EffectiveFrom.ToString("dd.MM.yyyy")</div>
+        @if (!string.IsNullOrWhiteSpace(norm.Notes))
+        { <div style="font-size:12px;color:#6b6b66">@norm.Notes</div> }
+      </div>
+      <div style="display:flex;gap:8px">
+        @if (User.IsInRole("admin") || User.IsInRole("operator"))
+        {
+          <a class="btn btn-secondary btn-sm" asp-action="Edit" asp-route-id="@norm.Id">Изменить</a>
+        }
+        @if (User.IsInRole("admin"))
+        {
+          <form method="post" asp-action="Delete" asp-route-id="@norm.Id" style="display:inline"
+                onsubmit="return confirm('Удалить норму?')">
+            @Html.AntiForgeryToken()
+            <button type="submit" class="btn btn-danger btn-sm">Удалить</button>
+          </form>
+        }
+      </div>
+    </div>
+
+    <!-- Коэффициенты -->
+    <div style="display:flex;gap:24px;margin-bottom:16px;flex-wrap:wrap">
+      <div>
+        <span style="font-size:11px;text-transform:uppercase;color:#6b6b66;letter-spacing:.4px">Базовая норма</span>
+        <div style="font-size:22px;font-weight:700;color:#2563eb">@norm.BaseNorm <small style="font-size:14px">л/100 км</small></div>
+      </div>
+      <div>
+        <span style="font-size:11px;text-transform:uppercase;color:#6b6b66;letter-spacing:.4px">К-т груз</span>
+        <div style="font-size:18px;font-weight:600">@norm.KCargo.ToString("P0")</div>
+      </div>
+      <div>
+        <span style="font-size:11px;text-transform:uppercase;color:#6b6b66;letter-spacing:.4px">К-т город</span>
+        <div style="font-size:18px;font-weight:600">@norm.KCity.ToString("P0")</div>
+      </div>
+      <div>
+        <span style="font-size:11px;text-transform:uppercase;color:#6b6b66;letter-spacing:.4px">К-т зима</span>
+        <div style="font-size:18px;font-weight:600">@norm.KWinter.ToString("P0")</div>
+      </div>
+    </div>
+
+    <!-- Расчётная таблица -->
+    <div style="font-size:12px;font-weight:600;color:#6b6b66;margin-bottom:8px">Расчёт норм (л/100 км)</div>
+    <div class="table-wrap">
+      <table class="norm-table">
+        <thead>
+          <tr>
+            <th rowspan="3" style="text-align:left;padding-left:12px">Условие</th>
+            <th colspan="4">Загород</th>
+            <th colspan="4">По городу</th>
+          </tr>
+          <tr>
+            <th colspan="2">Летнее</th>
+            <th colspan="2">Зимнее</th>
+            <th colspan="2">Летнее</th>
+            <th colspan="2">Зимнее</th>
+          </tr>
+          <tr>
+            <th>Без груза</th><th>С грузом</th>
+            <th>Без груза</th><th>С грузом</th>
+            <th>Без груза</th><th>С грузом</th>
+            <th>Без груза</th><th>С грузом</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="row-header" style="text-align:left;padding-left:12px">Норма (л/100 км)</td>
+            <td>@norm.SummerNoCargo.ToString("F2")</td>
+            <td>@norm.SummerWithCargo.ToString("F2")</td>
+            <td>@norm.WinterNoCargo.ToString("F2")</td>
+            <td class="highlight">@norm.WinterWithCargo.ToString("F2")</td>
+            <td>@norm.SummerNoCargoCity.ToString("F2")</td>
+            <td>@norm.SummerWithCargoCity.ToString("F2")</td>
+            <td>@norm.WinterNoCargoCity.ToString("F2")</td>
+            <td class="highlight">@norm.WinterWithCargoCity.ToString("F2")</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+}

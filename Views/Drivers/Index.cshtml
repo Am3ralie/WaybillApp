@@ -1,0 +1,72 @@
+@* Views/Drivers/Index.cshtml *@
+@model IEnumerable<WaybillApp.Models.Driver>
+@{
+    ViewData["Title"] = "Водители";
+}
+
+<div class="toolbar">
+  <div class="toolbar-right">
+    @if (User.IsInRole("admin") || User.IsInRole("operator"))
+    {
+      <a class="btn btn-primary" asp-action="Create">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        Добавить водителя
+      </a>
+    }
+  </div>
+</div>
+
+<div class="table-wrap">
+  <table>
+    <thead>
+      <tr>
+        <th>ФИО</th>
+        <th>Таб. номер</th>
+        <th>Удостоверение</th>
+        <th>Срок прав</th>
+        <th>Телефон</th>
+        <th>Статус</th>
+        <th>Действия</th>
+      </tr>
+    </thead>
+    <tbody>
+      @foreach (var d in Model)
+      {
+        <tr>
+          <td><strong>@d.FullName</strong></td>
+          <td>@d.TabNumber</td>
+          <td>@d.LicenseNumber</td>
+          <td>
+            @if (d.LicenseExpiry.HasValue)
+            {
+              var expired = d.LicenseExpiry.Value < DateOnly.FromDateTime(DateTime.Today);
+              <span class="badge @(expired ? "badge-red" : "badge-green")">
+                @d.LicenseExpiry.Value.ToString("dd.MM.yyyy")
+              </span>
+            }
+          </td>
+          <td>@d.Phone</td>
+          <td>
+            <span class="badge @(d.IsActive ? "badge-green" : "badge-gray")">
+              @(d.IsActive ? "Активен" : "Неактивен")
+            </span>
+          </td>
+          <td style="white-space:nowrap">
+            @if (User.IsInRole("admin") || User.IsInRole("operator"))
+            {
+              <a class="btn btn-secondary btn-sm" asp-action="Edit" asp-route-id="@d.Id">Изменить</a>
+            }
+            @if (User.IsInRole("admin"))
+            {
+              <form method="post" asp-action="Delete" asp-route-id="@d.Id" style="display:inline"
+                    onsubmit="return confirm('Удалить водителя @d.FullName?')">
+                @Html.AntiForgeryToken()
+                <button type="submit" class="btn btn-danger btn-sm">Удалить</button>
+              </form>
+            }
+          </td>
+        </tr>
+      }
+    </tbody>
+  </table>
+</div>

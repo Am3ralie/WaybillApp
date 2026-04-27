@@ -1,0 +1,118 @@
+@model WaybillApp.Models.Waybill
+@using WaybillApp.Models
+@{
+    ViewData["Title"] = $"Лист №{Model.Number ?? Model.Id.ToString()}";
+    var norm = (FuelNorm)ViewBag.Norm;
+}
+
+<div class="toolbar no-print">
+  <a class="btn btn-secondary" asp-action="Index">← Назад</a>
+  <a class="btn btn-secondary" asp-action="Print" asp-route-id="@Model.Id" target="_blank">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
+      <polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2"/>
+      <rect x="6" y="14" width="12" height="8"/>
+    </svg>
+    Печать
+  </a>
+  @if (User.IsInRole("admin") || User.IsInRole("operator"))
+  {
+    <a class="btn btn-primary" asp-action="Edit" asp-route-id="@Model.Id">Редактировать</a>
+  }
+</div>
+
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px">
+  <!-- Основные данные -->
+  <div class="card">
+    <h3 style="font-size:14px;font-weight:600;margin-bottom:12px;color:var(--text-2)">Основные данные</h3>
+    <dl style="display:grid;grid-template-columns:auto 1fr;gap:6px 16px;font-size:13px">
+      <dt style="color:var(--text-2)">№ листа</dt>        <dd><strong>@(Model.Number ?? "—")</strong></dd>
+      <dt style="color:var(--text-2)">Дата</dt>           <dd>@Model.Date.ToString("dd.MM.yyyy")</dd>
+      <dt style="color:var(--text-2)">Водитель</dt>       <dd>@Model.Driver?.FullName</dd>
+      <dt style="color:var(--text-2)">Транспорт</dt>      <dd>@Model.Vehicle?.PlateNumber @Model.Vehicle?.Model</dd>
+      <dt style="color:var(--text-2)">Маршрут</dt>        <dd>@(Model.Route ?? "—")</dd>
+      <dt style="color:var(--text-2)">Статус</dt>
+      <dd>
+        <span class="badge @(Model.Status == "open" ? "badge-blue" : Model.Status == "closed" ? "badge-green" : "badge-gray")">
+          @(Model.Status switch { "open" => "Открыт", "closed" => "Закрыт", "printed" => "Распечатан", _ => Model.Status })
+        </span>
+      </dd>
+      <dt style="color:var(--text-2)">Условия</dt>
+      <dd>
+        @(Model.IsOutOfCity ? "загород" : "город"),
+        @(Model.IsWinter ? "зима" : "лето"),
+        @(Model.WithCargo ? "с грузом" : "без груза")
+      </dd>
+    </dl>
+  </div>
+
+  <!-- Время и пробег -->
+  <div class="card">
+    <h3 style="font-size:14px;font-weight:600;margin-bottom:12px;color:var(--text-2)">Время и пробег</h3>
+    <dl style="display:grid;grid-template-columns:auto 1fr;gap:6px 16px;font-size:13px">
+      <dt style="color:var(--text-2)">Выезд</dt>        <dd>@Model.DepartureTime?.ToString("HH:mm")</dd>
+      <dt style="color:var(--text-2)">Возврат</dt>      <dd>@Model.ArrivalTime?.ToString("HH:mm")</dd>
+      <dt style="color:var(--text-2)">Время в наряде</dt><dd>@Model.TimeInDuty?.ToString("F2") ч</dd>
+      <dt style="color:var(--text-2)">Сп. при выезде</dt> <dd>@Model.OdometerStart?.ToString("N0") км</dd>
+      <dt style="color:var(--text-2)">Сп. при возврате</dt><dd>@Model.OdometerEnd?.ToString("N0") км</dd>
+      <dt style="color:var(--text-2)">Суточный пробег</dt><dd><strong>@Model.DailyMileage?.ToString("N0") км</strong></dd>
+    </dl>
+  </div>
+</div>
+
+<!-- Топливо -->
+<div class="card" style="margin-bottom:16px">
+  <h3 style="font-size:14px;font-weight:600;margin-bottom:14px;color:var(--text-2)">Движение топлива</h3>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Марка</th>
+          <th>Остаток при выезде</th>
+          <th>Заправлено</th>
+          <th>Остаток при возврате</th>
+          <th>По норме</th>
+          <th>Фактически</th>
+          <th>Экономия / Перерасход</th>
+          <th>Ставка нормы (л/100 км)</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>@(Model.FuelType ?? "—")</td>
+          <td>@Model.FuelAtDeparture?.ToString("F2") л</td>
+          <td>@Model.FuelAdded?.ToString("F2") л</td>
+          <td>@Model.FuelAtArrival?.ToString("F2") л</td>
+          <td><strong>@Model.FuelByNorm?.ToString("F2") л</strong></td>
+          <td>@Model.FuelActual?.ToString("F2") л</td>
+          <td>
+            @if (Model.FuelEconomyOrOverrun.HasValue)
+            {
+              var v = Model.FuelEconomyOrOverrun.Value;
+              <span class="@(v >= 0 ? "economy" : "overrun")">
+                @(v >= 0 ? "+" : "")@v.ToString("F2") л
+              </span>
+            }
+            else { <span>—</span> }
+          </td>
+          <td style="color:var(--text-2);font-size:12px">
+            @WaybillApp.Services.WaybillService.CalcRate(norm, Model.IsWinter, Model.WithCargo, Model.IsOutOfCity).ToString("F2")
+            л/100 км
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+  <div style="margin-top:10px;font-size:12px;color:var(--text-2)">
+    Норма «@norm.Name» (действует с @norm.EffectiveFrom.ToString("dd.MM.yyyy")):
+    база @norm.BaseNorm л/100 км, K груз @norm.KCargo.ToString("P0"),
+    K город @norm.KCity.ToString("P0"), K зима @norm.KWinter.ToString("P0")
+  </div>
+</div>
+
+@if (!string.IsNullOrWhiteSpace(Model.Notes))
+{
+  <div class="card">
+    <h3 style="font-size:14px;font-weight:600;margin-bottom:8px;color:var(--text-2)">Примечание</h3>
+    <p>@Model.Notes</p>
+  </div>
+}
