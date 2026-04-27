@@ -54,7 +54,7 @@ WaybillApp/
 │   ├── OtherControllers.cs       # Водители, ТС, Нормы
 │   └── HomeController.cs         # Дашборд
 ├── Services/
-│   └── WaybillService.cs         # ⭐ Вся бизнес-логика и расчёты
+│   └── WaybillService.cs         # !Вся бизнес-логика и расчёты
 ├── Models/
 │   └── Models.cs                 # Driver, Vehicle, Waybill, FuelNorm, ApplicationUser
 ├── Data/
@@ -82,3 +82,15 @@ WaybillApp/
 - `Microsoft.EntityFrameworkCore.Sqlite`
 - `Microsoft.EntityFrameworkCore.Tools`
 - `ClosedXML` (экспорт Excel)
+
+### Скриншоты интерфейса
+
+
+| Описание | Оригинал | Новая версия |
+| :--- | :---: | :---: |
+| **Таблица водителей** | <a href="img/screenshots/drivers-table.png"><img src="img/screenshots/drivers-table.png" width="300"></a> | <a href="img/screenshots/drivers-table-new.png"><img src="img/screenshots/drivers-table-new.png" width="300"></a> |
+| **Таблица топлива** | <a href="img/screenshots/fuelnorm-table.png"><img src="img/screenshots/fuelnorm-table.png" width="300"></a> | <a href="img/screenshots/fuelnorm-table-new.png"><img src="img/screenshots/fuelnorm-table-new.png" width="300"></a> |
+| **Таблица пользователей** | <a href="img/screenshots/users-table.png"><img src="img/screenshots/users-table.png" width="300"></a> | <a href="img/screenshots/users-table-new.png"><img src="img/screenshots/users-table-new.png" width="300"></a> |
+| **Таблица транспорта** | <a href="img/screenshots/vehicle-table.png"><img src="img/screenshots/vehicle-table.png" width="300"></a> | <a href="img/screenshots/vehicle-table-new.png"><img src="img/screenshots/vehicle-table-new.png" width="300"></a> |
+| **Путевые листы** | <a href="img/screenshots/waybill-table.png"><img src="img/screenshots/waybill-table.png" width="300"></a> | <a href="img/screenshots/waybill-table-new.png"><img src="img/screenshots/waybill-table-new.png" width="300"></a> |
+| **Прочее** | <a href="img/screenshots/index-admin.png">Админка</a> | <a href="img/screenshots/login.png">Логин</a> |

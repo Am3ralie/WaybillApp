@@ -10,4 +10,8 @@
     <PackageReference Include="Microsoft.EntityFrameworkCore.Tools" Version="8.0.0" />
     <PackageReference Include="ClosedXML" Version="0.102.2" />
   </ItemGroup>
+  <ItemGroup>
+    <Folder Include="img\screenshots\" />
+    <Folder Include="img\uml\" />
+  </ItemGroup>
 </Project>
