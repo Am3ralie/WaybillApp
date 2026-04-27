@@ -85,12 +85,12 @@ WaybillApp/
 
 ### Скриншоты интерфейса
 
-
-| Описание | Таблица | Форма создания |
+| Страница | Старая версия / Просмотр | Новая версия / Редактирование |
 | :--- | :---: | :---: |
-| **Таблица водителей** | <a href="img/screenshots/drivers-table.png"><img src="img/screenshots/drivers-table.png" width="300"></a> | <a href="img/screenshots/drivers-table-new.png"><img src="img/screenshots/drivers-table-new.png" width="300"></a> |
-| **Таблица топлива** | <a href="img/screenshots/fuelnorm-table.png"><img src="img/screenshots/fuelnorm-table.png" width="300"></a> | <a href="img/screenshots/fuelnorm-table-new.png"><img src="img/screenshots/fuelnorm-table-new.png" width="300"></a> |
-| **Таблица пользователей** | <a href="img/screenshots/users-table.png"><img src="img/screenshots/users-table.png" width="300"></a> | <a href="img/screenshots/users-table-new.png"><img src="img/screenshots/users-table-new.png" width="300"></a> |
-| **Таблица транспорта** | <a href="img/screenshots/vehicle-table.png"><img src="img/screenshots/vehicle-table.png" width="300"></a> | <a href="img/screenshots/vehicle-table-new.png"><img src="img/screenshots/vehicle-table-new.png" width="300"></a> |
-| **Путевые листы** | <a href="img/screenshots/waybill-table.png"><img src="img/screenshots/waybill-table.png" width="300"></a> | <a href="img/screenshots/waybill-table-new.png"><img src="img/screenshots/waybill-table-new.png" width="300"></a> |
-| **Прочее** | <a href="img/screenshots/index-admin.png">Админка</a> | <a href="img/screenshots/login.png">Логин</a> |
+| **Вход в систему** | <a href="img/screenshots/login.png"><img src="img/screenshots/login.png" width="350"></a> | — |
+| **Главная (Админ)** | <a href="img/screenshots/index-admin.png"><img src="img/screenshots/index-admin.png" width="350"></a> | — |
+| **Водители** | <a href="img/screenshots/drivers-table.png"><img src="img/screenshots/drivers-table.png" width="350"></a> | <a href="img/screenshots/drivers-table-new.png"><img src="img/screenshots/drivers-table-new.png" width="350"></a> |
+| **Нормы топлива** | <a href="img/screenshots/fuelnorm-table.png"><img src="img/screenshots/fuelnorm-table.png" width="350"></a> | <a href="img/screenshots/fuelnorm-table-new.png"><img src="img/screenshots/fuelnorm-table-new.png" width="350"></a> |
+| **Пользователи** | <a href="img/screenshots/users-table.png"><img src="img/screenshots/users-table.png" width="350"></a> | <a href="img/screenshots/users-table-new.png"><img src="img/screenshots/users-table-new.png" width="350"></a> <br> [Редактирование](img/screenshots/users-table-edit.png) |
+| **Транспорт** | <a href="img/screenshots/vehicle-table.png"><img src="img/screenshots/vehicle-table.png" width="350"></a> | <a href="img/screenshots/vehicle-table-new.png"><img src="img/screenshots/vehicle-table-new.png" width="350"></a> |
+| **Путевые листы** | <a href="img/screenshots/waybill-table.png"><img src="img/screenshots/waybill-table.png" width="350"></a> | <a href="img/screenshots/waybill-table-new.png"><img src="img/screenshots/waybill-table-new.png" width="350"></a> |
