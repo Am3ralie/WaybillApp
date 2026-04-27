@@ -1,0 +1,283 @@
+@startuml class_diagram
+!theme plain
+skinparam backgroundColor #FAFAFA
+skinparam defaultFontName Arial
+skinparam defaultFontSize 12
+skinparam classAttributeIconSize 0
+
+skinparam class {
+  BackgroundColor #EFF6FF
+  BorderColor #2563EB
+  HeaderBackgroundColor #1E3A5F
+  HeaderFontColor #FFFFFF
+  FontColor #1E293B
+  ArrowColor #374151
+}
+
+title <b>Диаграмма классов\nASP.NET Core MVC — WaybillApp
+
+' ═══════════════════════════════════════════════════════════════════════════
+' LAYER: MODELS
+' ═══════════════════════════════════════════════════════════════════════════
+
+namespace Models #F0F9FF {
+
+  class ApplicationUser {
+    + Id : string
+    + UserName : string
+    + Email : string
+    + FullName : string
+    + Role : string
+    + EmailConfirmed : bool
+  }
+
+  class Driver {
+    + Id : int
+    + FullName : string
+    + TabNumber : string?
+    + LicenseNumber : string?
+    + LicenseExpiry : DateOnly?
+    + Phone : string?
+    + IsActive : bool
+    + Waybills : ICollection<Waybill>
+  }
+
+  class Vehicle {
+    + Id : int
+    + PlateNumber : string
+    + Model : string?
+    + Vin : string?
+    + TechInspectionExpiry : DateOnly?
+    + IsActive : bool
+    + Waybills : ICollection<Waybill>
+  }
+
+  class Waybill {
+    + Id : int
+    + Number : string?
+    + DriverId : int
+    + VehicleId : int
+    + Date : DateOnly
+    + DepartureTime : TimeOnly?
+    + ArrivalTime : TimeOnly?
+    + OdometerStart : int?
+    + OdometerEnd : int?
+    + FuelAtDeparture : double?
+    + FuelAtArrival : double?
+    + FuelAdded : double?
+    + FuelType : string?
+    + Route : string?
+    + IsOutOfCity : bool
+    + IsWinter : bool
+    + WithCargo : bool
+    + Status : string
+    + Notes : string?
+    + CreatedAt : DateTime
+    + CreatedByUserId : string?
+    + Driver : Driver?
+    + Vehicle : Vehicle?
+    --
+    <<NotMapped>>
+    + DailyMileage : int?
+    + TimeInDuty : double?
+    + FuelActual : double?
+    + FuelByNorm : double?
+    + FuelEconomyOrOverrun : double?
+  }
+
+  class FuelNorm {
+    + Id : int
+    + Name : string
+    + BaseNorm : double
+    + KCargo : double
+    + KCity : double
+    + KWinter : double
+    + EffectiveFrom : DateOnly
+    + Notes : string?
+    --
+    <<NotMapped>>
+    + SummerNoCargo : double
+    + SummerWithCargo : double
+    + WinterNoCargo : double
+    + WinterWithCargo : double
+    + SummerNoCargoCity : double
+    + SummerWithCargoCity : double
+    + WinterNoCargoCity : double
+    + WinterWithCargoCity : double
+    --
+    + GetNorm(isWinter, withCargo, outOfCity) : double
+  }
+
+  class DashboardStats <<DTO>> {
+    + TotalWaybills : int
+    + TodayCount : int
+    + MonthCount : int
+    + ActiveDrivers : int
+    + ActiveVehicles : int
+    + MonthMileage : long
+    + MonthFuelActual : double
+    + MonthFuelNorm : double
+    + MonthFuelDelta : double
+  }
+
+  Driver     "1" o-- "0..*" Waybill : выполняет >
+  Vehicle    "1" o-- "0..*" Waybill : используется в >
+  FuelNorm   "1" ..o "0..*" Waybill : применяется к >
+}
+
+' ═══════════════════════════════════════════════════════════════════════════
+' LAYER: DATA ACCESS
+' ═══════════════════════════════════════════════════════════════════════════
+
+namespace Data #F0FFF4 {
+
+  class AppDbContext {
+    + Drivers  : DbSet<Driver>
+    + Vehicles : DbSet<Vehicle>
+    + Waybills : DbSet<Waybill>
+    + FuelNorms : DbSet<FuelNorm>
+    --
+    # OnModelCreating(builder) : void
+  }
+
+  AppDbContext --> Models.Driver
+  AppDbContext --> Models.Vehicle
+  AppDbContext --> Models.Waybill
+  AppDbContext --> Models.FuelNorm
+}
+
+' ═══════════════════════════════════════════════════════════════════════════
+' LAYER: SERVICES
+' ═══════════════════════════════════════════════════════════════════════════
+
+namespace Services #FFFBEB {
+
+  class WaybillService {
+    - _db : AppDbContext
+    --
+    + GetNormForDate(date) : FuelNorm
+    + GetLatestNorm() : FuelNorm
+    + {static} CalcRate(norm, isWinter, withCargo, outOfCity) : double
+    + ApplyNorm(waybill) : void
+    + ApplyNorms(waybills) : void
+    + GetFilteredAsync(search, month, year, driverId) : Task<List<Waybill>>
+    + GetByIdAsync(id) : Task<Waybill?>
+    + CreateAsync(waybill, createdBy) : Task
+    + UpdateAsync(waybill) : Task
+    + DeleteAsync(id) : Task<bool>
+    + GetStatsAsync() : Task<DashboardStats>
+    + ExportExcelAsync(month, year) : Task<byte[]>
+    --
+    - BuildWaybillSheet(ws, list, norm) : void
+    - BuildNormSheet(ws, norm) : void
+  }
+
+  WaybillService --> Data.AppDbContext
+  WaybillService --> Models.Waybill
+  WaybillService --> Models.FuelNorm
+  WaybillService --> Models.DashboardStats
+}
+
+' ═══════════════════════════════════════════════════════════════════════════
+' LAYER: CONTROLLERS
+' ═══════════════════════════════════════════════════════════════════════════
+
+namespace Controllers #FFF0F5 {
+
+  abstract class BaseController {
+    # TempData
+    # User
+    # View() : IActionResult
+    # RedirectToAction() : IActionResult
+    # NotFound() : IActionResult
+  }
+
+  class HomeController {
+    - _svc : WaybillService
+    --
+    + Index() : Task<IActionResult>
+  }
+
+  class WaybillsController {
+    - _db  : AppDbContext
+    - _svc : WaybillService
+    --
+    + Index(search, month, year) : Task<IActionResult>
+    + Create() : IActionResult
+    + Create(waybill) : Task<IActionResult>
+    + Edit(id) : Task<IActionResult>
+    + Edit(id, waybill) : Task<IActionResult>
+    + Details(id) : Task<IActionResult>
+    + Delete(id) : Task<IActionResult>
+    + Print(id) : Task<IActionResult>
+    + ExportExcel(month, year) : Task<IActionResult>
+    - PopulateDropdowns() : void
+  }
+
+  class DriversController {
+    - _db : AppDbContext
+    --
+    + Index() : Task<IActionResult>
+    + Create() : IActionResult
+    + Create(driver) : Task<IActionResult>
+    + Edit(id) : Task<IActionResult>
+    + Edit(id, driver) : Task<IActionResult>
+    + Delete(id) : Task<IActionResult>
+  }
+
+  class VehiclesController {
+    - _db : AppDbContext
+    --
+    + Index() : Task<IActionResult>
+    + Create() : IActionResult
+    + Create(vehicle) : Task<IActionResult>
+    + Edit(id) : Task<IActionResult>
+    + Edit(id, vehicle) : Task<IActionResult>
+    + Delete(id) : Task<IActionResult>
+  }
+
+  class FuelNormsController {
+    - _db  : AppDbContext
+    - _svc : WaybillService
+    --
+    + Index() : Task<IActionResult>
+    + Create() : IActionResult
+    + Create(norm) : Task<IActionResult>
+    + Edit(id) : Task<IActionResult>
+    + Edit(id, norm) : Task<IActionResult>
+    + Delete(id) : Task<IActionResult>
+  }
+
+  class AccountController {
+    - _users   : UserManager<ApplicationUser>
+    - _signIn  : SignInManager<ApplicationUser>
+    - _roles   : RoleManager<IdentityRole>
+    --
+    + Login() : IActionResult
+    + Login(username, password, remember) : Task<IActionResult>
+    + Logout() : Task<IActionResult>
+    + Users() : IActionResult
+    + CreateUser(...) : Task<IActionResult>
+    + EditUser(id) : Task<IActionResult>
+    + EditUser(id, ...) : Task<IActionResult>
+    + DeleteUser(id) : Task<IActionResult>
+  }
+
+  HomeController       --|> BaseController
+  WaybillsController   --|> BaseController
+  DriversController    --|> BaseController
+  VehiclesController   --|> BaseController
+  FuelNormsController  --|> BaseController
+  AccountController    --|> BaseController
+
+  HomeController      --> Services.WaybillService
+  WaybillsController  --> Services.WaybillService
+  WaybillsController  --> Data.AppDbContext
+  DriversController   --> Data.AppDbContext
+  VehiclesController  --> Data.AppDbContext
+  FuelNormsController --> Services.WaybillService
+  FuelNormsController --> Data.AppDbContext
+  AccountController   --> Models.ApplicationUser
+}
+
+@enduml

@@ -1,0 +1,139 @@
+@startuml er_diagram
+!theme plain
+skinparam backgroundColor #FAFAFA
+skinparam defaultFontName Arial
+skinparam defaultFontSize 12
+
+skinparam entity {
+  BackgroundColor #EFF6FF
+  BorderColor #2563EB
+  FontColor #1E293B
+  AttributeIconSize 0
+}
+skinparam arrow {
+  Color #374151
+  FontColor #374151
+  FontSize 11
+}
+
+title <b>ER-диаграмма\nСистема учёта путевых листов
+
+' ═══════════════════════════════════════════════════════════════════════════
+' СУЩНОСТИ
+' ═══════════════════════════════════════════════════════════════════════════
+
+entity "AspNetUsers\n(Пользователи)" as Users #DBEAFE {
+  * **Id** : NVARCHAR PK
+  --
+  UserName        : NVARCHAR UNIQUE
+  Email           : NVARCHAR
+  PasswordHash    : NVARCHAR
+  FullName        : NVARCHAR
+  Role            : NVARCHAR
+  EmailConfirmed  : BOOLEAN
+}
+
+entity "AspNetRoles\n(Роли)" as Roles #DBEAFE {
+  * **Id** : NVARCHAR PK
+  --
+  Name            : NVARCHAR UNIQUE
+  NormalizedName  : NVARCHAR
+}
+
+entity "AspNetUserRoles\n(Пользователь-Роль)" as UserRoles #E0E7FF {
+  * **UserId** : NVARCHAR FK
+  * **RoleId** : NVARCHAR FK
+}
+
+entity "Drivers\n(Водители)" as Drivers #DCFCE7 {
+  * **Id** : INTEGER PK
+  --
+  FullName         : NVARCHAR NOT NULL
+  TabNumber        : NVARCHAR
+  LicenseNumber    : NVARCHAR
+  LicenseExpiry    : DATE
+  Phone            : NVARCHAR
+  IsActive         : BOOLEAN DEFAULT TRUE
+}
+
+entity "Vehicles\n(Транспортные средства)" as Vehicles #FEF9C3 {
+  * **Id** : INTEGER PK
+  --
+  PlateNumber            : NVARCHAR NOT NULL UNIQUE
+  Model                  : NVARCHAR
+  Vin                    : NVARCHAR
+  TechInspectionExpiry   : DATE
+  IsActive               : BOOLEAN DEFAULT TRUE
+}
+
+entity "Waybills\n(Путевые листы)" as Waybills #FEE2E2 {
+  * **Id** : INTEGER PK
+  --
+  Number           : NVARCHAR
+  DriverId         : INTEGER FK NOT NULL
+  VehicleId        : INTEGER FK NOT NULL
+  Date             : DATE NOT NULL
+  DepartureTime    : TIME
+  ArrivalTime      : TIME
+  OdometerStart    : INTEGER
+  OdometerEnd      : INTEGER
+  FuelAtDeparture  : REAL
+  FuelAtArrival    : REAL
+  FuelAdded        : REAL
+  FuelType         : NVARCHAR
+  Route            : NVARCHAR
+  IsOutOfCity      : BOOLEAN DEFAULT FALSE
+  IsWinter         : BOOLEAN DEFAULT FALSE
+  WithCargo        : BOOLEAN DEFAULT FALSE
+  Status           : NVARCHAR DEFAULT 'open'
+  Notes            : NVARCHAR
+  CreatedAt        : DATETIME
+  CreatedByUserId  : NVARCHAR
+}
+
+entity "FuelNorms\n(Нормы расхода)" as FuelNorms #F3E8FF {
+  * **Id** : INTEGER PK
+  --
+  Name            : NVARCHAR NOT NULL
+  BaseNorm        : REAL NOT NULL
+  KCargo          : REAL NOT NULL
+  KCity           : REAL NOT NULL
+  KWinter         : REAL NOT NULL
+  EffectiveFrom   : DATE NOT NULL
+  Notes           : NVARCHAR
+}
+
+' ═══════════════════════════════════════════════════════════════════════════
+' ВЫЧИСЛЯЕМЫЕ ПОЛЯ (не в БД, в памяти)
+' ═══════════════════════════════════════════════════════════════════════════
+
+note right of Waybills
+  <b>Вычисляемые поля (NotMapped):</b>
+  DailyMileage = OdometerEnd − OdometerStart
+  TimeInDuty = ArrivalTime − DepartureTime
+  FuelActual = FuelAtDeparture + FuelAdded − FuelAtArrival
+  FuelByNorm = DailyMileage × Rate / 100
+  FuelEconomy = FuelByNorm − FuelActual
+end note
+
+note right of FuelNorms
+  <b>Формула ставки:</b>
+  Rate = BaseNorm
+    × (1 + KCargo)?
+    × (1 + KWinter)?
+    × (1 + KCity)?
+end note
+
+' ═══════════════════════════════════════════════════════════════════════════
+' СВЯЗИ
+' ═══════════════════════════════════════════════════════════════════════════
+
+Users    ||--o{ UserRoles  : "имеет"
+Roles    ||--o{ UserRoles  : "назначается"
+
+Drivers  ||--o{ Waybills   : "выполняет\n(DriverId)"
+Vehicles ||--o{ Waybills   : "используется в\n(VehicleId)"
+
+FuelNorms }o--o{ Waybills  : "применяется к\n(по дате)"
+
+@enduml

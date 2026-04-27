@@ -1,0 +1,131 @@
+@startuml sequence_diagram
+!theme plain
+skinparam backgroundColor #FAFAFA
+skinparam defaultFontName Arial
+skinparam defaultFontSize 12
+skinparam sequenceMessageAlign center
+
+skinparam participant {
+  BackgroundColor #EFF6FF
+  BorderColor #2563EB
+  FontColor #1E293B
+}
+skinparam actor {
+  BackgroundColor #DBEAFE
+  BorderColor #1D4ED8
+}
+skinparam sequence {
+  ArrowColor #374151
+  ArrowFontColor #374151
+  LifeLineBorderColor #94A3B8
+  LifeLineBackgroundColor #F8FAFC
+  DividerBackgroundColor #E2E8F0
+  DividerBorderColor #94A3B8
+  GroupBorderColor #2563EB
+  GroupBackgroundColor #EFF6FF
+  GroupFontColor #1D4ED8
+}
+skinparam note {
+  BackgroundColor #FEF9C3
+  BorderColor #CA8A04
+  FontColor #1E293B
+}
+
+title <b>Sequence Diagram — Расчёт путевого листа
+
+actor       "Оператор"          as OP
+participant "Браузер\n(View)"   as VIEW
+participant "WaybillsController" as CTRL
+participant "WaybillService"    as SVC
+participant "AppDbContext\n(EF Core)" as DB
+database    "SQLite"            as SQL
+
+' ═══════════════════════════════════════════════════════════════════════════
+== 1. Открытие формы создания ==
+' ═══════════════════════════════════════════════════════════════════════════
+
+OP -> VIEW : Нажимает «Создать путевой лист»
+VIEW -> CTRL : GET /Waybills/Create
+
+CTRL -> DB : Drivers.Where(IsActive).ToList()
+DB -> SQL : SELECT * FROM Drivers WHERE IsActive=1
+SQL --> DB : Список водителей
+DB --> CTRL : List<Driver>
+
+CTRL -> DB : Vehicles.Where(IsActive).ToList()
+DB -> SQL : SELECT * FROM Vehicles WHERE IsActive=1
+SQL --> DB : Список ТС
+DB --> CTRL : List<Vehicle>
+
+CTRL -> SVC : GetLatestNorm()
+SVC -> DB : FuelNorms.OrderByDescending(EffectiveFrom).First()
+DB -> SQL : SELECT TOP 1 * FROM FuelNorms ORDER BY EffectiveFrom DESC
+SQL --> DB : FuelNorm {BaseNorm=23.8, KCargo=0.05, ...}
+DB --> SVC : FuelNorm
+SVC --> CTRL : FuelNorm
+
+note over CTRL
+  ViewBag.Drivers = list
+  ViewBag.Vehicles = list
+  ViewBag.Norm = norm
+end note
+
+CTRL --> VIEW : View(new Waybill())
+VIEW --> OP : Форма с выпадающими списками\nи JS-калькулятором
+
+' ═══════════════════════════════════════════════════════════════════════════
+== 2. Ввод данных и предпросмотр расчёта (JS, без сервера) ==
+' ═══════════════════════════════════════════════════════════════════════════
+
+OP -> VIEW : Вводит: водитель, ТС, дата,\nпробег, топливо, флаги условий
+
+group Расчёт в браузере (JavaScript)
+  VIEW -> VIEW : calcMileage()\n  пробег = спидометр_конец − спидометр_начало
+  VIEW -> VIEW : calcFuel()\n  ставка = BaseNorm\n  × (1+KCargo)? × (1+KWinter)? × (1+KCity)?\n  норма_л = пробег × ставка / 100\n  факт_л = остаток_выезд + заправлено − остаток_возврат\n  дельта = норма_л − факт_л
+  VIEW --> OP : Обновляет поля предпросмотра\n(«По норме: 21.4 л | Факт: 19.7 л | Экономия: +1.7 л»)
+end
+
+' ═══════════════════════════════════════════════════════════════════════════
+== 3. Сохранение листа ==
+' ═══════════════════════════════════════════════════════════════════════════
+
+OP -> VIEW : Нажимает «Создать»
+VIEW -> CTRL : POST /Waybills/Create {waybill data}
+
+CTRL -> CTRL : ModelState.Remove("Driver")\nModelState.Remove("Vehicle")\nif (!ModelState.IsValid) → return View()
+
+CTRL -> SVC : CreateAsync(waybill, userName)
+
+group WaybillService.CreateAsync
+  SVC -> SVC : waybill.CreatedAt = DateTime.UtcNow\nwaybill.CreatedByUserId = userName
+  SVC -> DB : Waybills.Add(waybill)
+  DB -> SQL : INSERT INTO Waybills (...)
+  SQL --> DB : OK (Id = 42)
+  DB --> SVC : SaveChangesAsync()
+  SVC --> CTRL : void
+end
+
+' ═══════════════════════════════════════════════════════════════════════════
+== 4. Открытие списка — серверный расчёт нормы ==
+' ═══════════════════════════════════════════════════════════════════════════
+
+CTRL -> CTRL : TempData["Success"] = "Лист создан"
+CTRL --> VIEW : RedirectToAction("Index")
+
+VIEW -> CTRL : GET /Waybills/Index
+
+CTRL -> SVC : GetFilteredAsync(search, month, year)
+
+group WaybillService.GetFilteredAsync
+  SVC -> DB : Waybills.Include(Driver).Include(Vehicle)\n.OrderByDescending(Date).ToListAsync()
+  DB -> SQL : SELECT w.*, d.*, v.*\nFROM Waybills w\nJOIN Drivers d ON w.DriverId=d.Id\nJOIN Vehicles v ON w.VehicleId=v.Id
+  SQL --> DB : Список листов
+  DB --> SVC : List<Waybill>
+  SVC -> SVC : ApplyNorms(list)\n→ для каждого листа:\n  norm = GetNormForDate(w.Date)\n  rate = CalcRate(norm, w.IsWinter,\n    w.WithCargo, w.IsOutOfCity)\n  w.FuelByNorm = пробег × rate / 100
+  SVC --> CTRL : List<Waybill> (с заполненным FuelByNorm)
+end
+
+CTRL --> VIEW : View(list)
+VIEW --> OP : Таблица путевых листов\nс колонками «По норме» / «Факт» / «Экономия»
+
+@enduml

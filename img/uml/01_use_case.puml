@@ -1,0 +1,126 @@
+@startuml use_case
+!theme plain
+skinparam backgroundColor #FAFAFA
+skinparam defaultFontName Arial
+skinparam defaultFontSize 13
+skinparam actorStyle awesome
+
+skinparam usecase {
+  BackgroundColor #EFF6FF
+  BorderColor #2563EB
+  ArrowColor #374151
+  FontColor #1E293B
+}
+skinparam actor {
+  BackgroundColor #DBEAFE
+  BorderColor #1D4ED8
+  FontColor #1E293B
+}
+skinparam package {
+  BackgroundColor #F8FAFC
+  BorderColor #CBD5E1
+  FontColor #475569
+  FontStyle bold
+}
+
+title <b>Диаграмма вариантов использования\nСистема учёта путевых листов
+
+' ── Акторы ──────────────────────────────────────────────────────────────────
+actor "Администратор" as Admin #BFDBFE
+actor "Оператор"      as Operator #BBF7D0
+actor "Водитель"      as Driver #FEF9C3
+
+' ── Система ─────────────────────────────────────────────────────────────────
+rectangle "Система учёта путевых листов" {
+
+  package "Аутентификация" {
+    usecase "UC01\nВход в систему"            as UC01
+    usecase "UC02\nВыход из системы"          as UC02
+  }
+
+  package "Путевые листы" {
+    usecase "UC03\nПросмотр путевых листов"   as UC03
+    usecase "UC04\nСоздать путевой лист"      as UC04
+    usecase "UC05\nРедактировать лист"        as UC05
+    usecase "UC06\nУдалить лист"              as UC06
+    usecase "UC07\nПросмотр деталей листа"    as UC07
+    usecase "UC08\nПечать путевого листа"     as UC08
+    usecase "UC09\nЭкспорт в Excel"           as UC09
+    usecase "UC10\nФильтрация и поиск"        as UC10
+  }
+
+  package "Справочники" {
+    usecase "UC11\nУправление водителями"     as UC11
+    usecase "UC12\nУправление транспортом"    as UC12
+    usecase "UC13\nПросмотр водителей и ТС"  as UC13
+  }
+
+  package "Нормы расхода топлива" {
+    usecase "UC14\nПросмотр норм"             as UC14
+    usecase "UC15\nДобавить/изменить норму"   as UC15
+    usecase "UC16\nУдалить норму"             as UC16
+    usecase "UC17\nАвторасчёт по коэф-там"   as UC17
+  }
+
+  package "Администрирование" {
+    usecase "UC18\nСоздать пользователя"      as UC18
+    usecase "UC19\nРедактировать пользователя" as UC19
+    usecase "UC20\nСменить роль пользователя" as UC20
+    usecase "UC21\nУдалить пользователя"      as UC21
+    usecase "UC22\nПросмотр дашборда"        as UC22
+  }
+}
+
+' ── Связи: Администратор ────────────────────────────────────────────────────
+Admin --> UC01
+Admin --> UC02
+Admin --> UC03
+Admin --> UC04
+Admin --> UC05
+Admin --> UC06
+Admin --> UC07
+Admin --> UC08
+Admin --> UC09
+Admin --> UC10
+Admin --> UC11
+Admin --> UC12
+Admin --> UC15
+Admin --> UC16
+Admin --> UC18
+Admin --> UC19
+Admin --> UC20
+Admin --> UC21
+Admin --> UC22
+
+' ── Связи: Оператор ─────────────────────────────────────────────────────────
+Operator --> UC01
+Operator --> UC02
+Operator --> UC03
+Operator --> UC04
+Operator --> UC05
+Operator --> UC07
+Operator --> UC08
+Operator --> UC09
+Operator --> UC10
+Operator --> UC11
+Operator --> UC12
+Operator --> UC14
+Operator --> UC15
+Operator --> UC22
+
+' ── Связи: Водитель ─────────────────────────────────────────────────────────
+Driver --> UC01
+Driver --> UC02
+Driver --> UC03
+Driver --> UC07
+Driver --> UC08
+Driver --> UC13
+Driver --> UC14
+
+' ── Include/Extend ──────────────────────────────────────────────────────────
+UC04 .> UC17 : <<include>>
+UC05 .> UC17 : <<include>>
+UC09 .> UC03 : <<extend>>
+UC08 .> UC07 : <<extend>>
+
+@enduml
