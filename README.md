@@ -60,7 +60,10 @@ WaybillApp/
 ├── Data/
 │   └── AppDbContext.cs           # EF Core DbContext
 ├── Views/                        # Razor Views
-└── wwwroot/css|js/               # Стили и скрипты
+├── wwwroot/css|js/               # Стили и скрипты
+└── img/
+    ├── screenshots/              # Скриншоты работы
+    └── uml/                      # Диаграммы
 ```
 
 ## Формула расчёта нормы
