@@ -86,7 +86,7 @@ WaybillApp/
 ### Скриншоты интерфейса
 
 
-| Описание | Оригинал | Новая версия |
+| Описание | Таблица | Форма создания |
 | :--- | :---: | :---: |
 | **Таблица водителей** | <a href="img/screenshots/drivers-table.png"><img src="img/screenshots/drivers-table.png" width="300"></a> | <a href="img/screenshots/drivers-table-new.png"><img src="img/screenshots/drivers-table-new.png" width="300"></a> |
 | **Таблица топлива** | <a href="img/screenshots/fuelnorm-table.png"><img src="img/screenshots/fuelnorm-table.png" width="300"></a> | <a href="img/screenshots/fuelnorm-table-new.png"><img src="img/screenshots/fuelnorm-table-new.png" width="300"></a> |
